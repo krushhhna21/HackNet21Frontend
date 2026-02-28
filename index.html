@@ -273,7 +273,10 @@ async function pollLogs(){
   }catch(e){}
 }
 
-function clearLogs(){ document.getElementById('logBox').innerHTML=''; }
+async function clearLogs(){
+  document.getElementById('logBox').innerHTML='';
+  try { await fetch(API+'/logs/clear',{method:'POST'}); } catch(e){}
+}
 
 async function startAgent(){
   await fetch(API+'/agent/start',{method:'POST'});
