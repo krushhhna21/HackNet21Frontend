@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hackathon Agent Dashboard</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Cascadia Code','Fira Code','Consolas',monospace;background:#0a0a12;color:#c0c0d0}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#0a0a12}::-webkit-scrollbar-thumb{background:#e94560;border-radius:3px}
+
+.header{background:linear-gradient(135deg,#0d0d1a,#1a1a2e);padding:20px 28px;border-bottom:2px solid #e94560;display:flex;justify-content:space-between;align-items:center}
+.header h1{font-size:20px;color:#e94560;letter-spacing:1px}
+.header .sub{color:#555;font-size:12px;margin-top:2px}
+.header .clock{color:#6c5ce7;font-size:13px;font-family:monospace}
+
+.main{display:grid;grid-template-columns:1fr 340px;gap:0;height:calc(100vh - 68px)}
+.left{padding:20px;overflow-y:auto}
+.right{background:#0d0d18;border-left:1px solid #1a1a2e;display:flex;flex-direction:column}
+
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;align-items:center}
+.btn{padding:8px 16px;border:1px solid #2a2a3e;border-radius:5px;cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;transition:.2s;background:#1a1a2e;color:#c0c0d0}
+.btn:hover{border-color:#e94560;color:#fff}
+.btn-green{border-color:#00b894;color:#00b894}.btn-green:hover{background:#00b894;color:#fff}
+.btn-red{border-color:#e94560;color:#e94560}.btn-red:hover{background:#e94560;color:#fff}
+.btn-purple{border-color:#6c5ce7;color:#6c5ce7}.btn-purple:hover{background:#6c5ce7;color:#fff}
+.btn-blue{border-color:#0984e3;color:#0984e3}.btn-blue:hover{background:#0984e3;color:#fff}
+.btn-orange{border-color:#e17055;color:#e17055}.btn-orange:hover{background:#e17055;color:#fff}
+.btn-cyan{border-color:#00cec9;color:#00cec9}.btn-cyan:hover{background:#00cec9;color:#fff}
+
+.badge{padding:4px 12px;border-radius:12px;font-size:11px;font-weight:700;letter-spacing:.5px}
+.b-run{background:#00b89422;color:#00b894;border:1px solid #00b89455}
+.b-stop{background:#e9456022;color:#e94560;border:1px solid #e9456055}
+.b-sleep{background:#fdcb6e22;color:#fdcb6e;border:1px solid #fdcb6e55}
+
+.timers{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.timer-box{background:#111122;border:1px solid #1e1e3a;border-radius:8px;padding:10px 16px;font-size:12px;min-width:140px}
+.timer-box .label{color:#666;font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.timer-box .value{color:#6c5ce7;font-size:18px;font-weight:700;font-family:monospace}
+
+.panels{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.panel{background:#111122;border:1px solid #1e1e3a;border-radius:8px;padding:14px;min-height:110px}
+.panel h4{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.panel h4.clr-red{color:#e94560}.panel h4.clr-cyan{color:#00cec9}.panel h4.clr-purple{color:#6c5ce7}.panel h4.clr-green{color:#00b894}
+.stat-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:11px}
+.stat-row .stat-label{color:#666}
+.stat-row .stat-val{color:#c0c0d0;font-weight:700}
+.stat-big{font-size:22px;font-weight:700;font-family:monospace;margin:4px 0}
+.stat-big.green{color:#00b894}.stat-big.red{color:#e94560}.stat-big.purple{color:#6c5ce7}.stat-big.cyan{color:#00cec9}
+.toggle{position:relative;display:inline-block;width:34px;height:18px;margin-left:auto}
+.toggle input{opacity:0;width:0;height:0}
+.toggle .slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#2a2a3e;border-radius:9px;transition:.2s}
+.toggle .slider:before{content:'';position:absolute;height:14px;width:14px;left:2px;bottom:2px;background:#666;border-radius:50%;transition:.2s}
+.toggle input:checked + .slider{background:#00b894}
+.toggle input:checked + .slider:before{transform:translateX(16px);background:#fff}
+.tag{display:inline-block;background:#1a1a2e;border:1px solid #2a2a3e;border-radius:3px;padding:1px 6px;font-size:9px;color:#6c5ce7;margin:1px}
+.personality-row{font-size:11px;color:#888;margin-bottom:4px}
+.personality-row span{color:#c0c0d0}
+
+.form-section{background:#111122;border:1px solid #1e1e3a;border-radius:8px;padding:16px;margin-bottom:16px}
+.form-section h3{color:#e94560;font-size:13px;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px}
+.form-row{display:flex;gap:8px;margin-bottom:8px}
+.input{background:#0a0a12;border:1px solid #2a2a3e;border-radius:5px;padding:8px 12px;color:#c0c0d0;font-family:inherit;font-size:12px;flex:1;outline:none}
+.input:focus{border-color:#6c5ce7}
+.input::placeholder{color:#444}
+
+.cards{display:grid;gap:12px}
+.card{background:#111122;border:1px solid #1e1e3a;border-radius:8px;padding:16px;transition:.2s}
+.card:hover{border-color:#e94560}
+.card h3{color:#e94560;font-size:14px;margin-bottom:6px}
+.card .topic{color:#6c5ce7;font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.card .summary{color:#888;font-size:12px;line-height:1.6}
+.card .actions{margin-top:8px;display:flex;gap:6px}
+
+.log-header{padding:12px 16px;border-bottom:1px solid #1a1a2e;display:flex;justify-content:space-between;align-items:center}
+.log-header h3{color:#00cec9;font-size:12px;text-transform:uppercase;letter-spacing:1.5px}
+.log-body{flex:1;overflow-y:auto;padding:8px 12px;font-size:11px;line-height:1.8}
+.log-line{border-bottom:1px solid #0d0d18;padding:2px 0;word-break:break-all}
+.log-ts{color:#444;margin-right:6px}
+.log-ok{color:#00b894}.log-info{color:#0984e3}.log-warn{color:#fdcb6e}.log-error{color:#e94560}
+
+.right-section{border-bottom:1px solid #1a1a2e;padding:12px 16px}
+.right-section h4{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px;color:#6c5ce7}
+
+.loading{text-align:center;padding:30px;color:#555;font-size:12px}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid #222;border-top-color:#e94560;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.section-label{color:#444;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px}
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1>&#x1F99E; HACKATHON AGENT</h1>
+    <div class="sub">moltbook ai networking agent // groq llama 3.3 70b</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:14px">
+    <div class="clock" id="clock">--:--:--</div>
+    <button class="btn btn-red" onclick="doLogout()" style="padding:5px 14px;font-size:11px">&#x1F6AA; LOGOUT</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="left">
+    <div class="controls">
+      <button class="btn btn-green" onclick="startAgent()">&#9654; START</button>
+      <button class="btn btn-red" onclick="stopAgent()">&#9632; STOP</button>
+      <button class="btn btn-orange" onclick="sleepAgent()">&#9208; SLEEP 30m</button>
+      <button class="btn btn-green" onclick="wakeAgent()">&#9200; WAKE</button>
+      <span id="status" class="badge b-stop">OFFLINE</span>
+    </div>
+
+    <div class="timers">
+      <div class="timer-box">
+        <div class="label">Sleep Remaining</div>
+        <div class="value" id="sleepTimer">--:--</div>
+      </div>
+      <div class="timer-box">
+        <div class="label">Next Post In</div>
+        <div class="value" id="postTimer">--:--</div>
+      </div>
+    </div>
+
+    <div class="panels">
+      <div class="panel">
+        <h4 class="clr-purple">&#x2699; Agent Settings</h4>
+        <div class="stat-row">
+          <span class="stat-label">Posting</span>
+          <label class="toggle"><input type="checkbox" id="cfgPosting" checked onchange="toggleCfg('posting_enabled',this.checked)"><span class="slider"></span></label>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Commenting</span>
+          <label class="toggle"><input type="checkbox" id="cfgCommenting" checked onchange="toggleCfg('commenting_enabled',this.checked)"><span class="slider"></span></label>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Interval</span>
+          <span class="stat-val" id="cfgInterval">30m</span>
+        </div>
+        <div id="cfgTopics" style="margin-top:6px"></div>
+      </div>
+
+      <div class="panel">
+        <h4 class="clr-red">&#x1F9EE; Verification</h4>
+        <div class="stat-big green" id="metricRate">--%</div>
+        <div style="font-size:10px;color:#666;margin-bottom:6px">success rate</div>
+        <div class="stat-row">
+          <span class="stat-label">Solved</span>
+          <span class="stat-val" style="color:#00b894" id="metricSolved">0</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Failed</span>
+          <span class="stat-val" style="color:#e94560" id="metricFailed">0</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h4 class="clr-cyan">&#x1F4BE; Memory</h4>
+        <div class="stat-row">
+          <span class="stat-label">Posts Commented</span>
+          <span class="stat-val" id="memCommented">0</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Seen Feed Items</span>
+          <span class="stat-val" id="memSeen">0</span>
+        </div>
+        <div style="margin-top:8px;font-size:10px;color:#444">Auto-tracked via memory.json + feed_seen.json</div>
+      </div>
+
+      <div class="panel">
+        <h4 class="clr-green">&#x1F916; Personality</h4>
+        <div class="personality-row">Name: <span id="perName">--</span></div>
+        <div class="personality-row">Role: <span id="perRole">--</span></div>
+        <div class="personality-row">Style: <span id="perStyle">--</span></div>
+        <div class="personality-row">LLM: <span id="perLLM">--</span></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>&#9889; Quick Post</h3>
+      <div class="form-row">
+        <input class="input" id="postTopic" placeholder="Topic (AI generates title & content)" />
+        <button class="btn btn-purple" onclick="quickPost()">&#x1F680; POST</button>
+      </div>
+      <div class="form-row">
+        <input class="input" id="postTitle" placeholder="Or enter title manually..." />
+      </div>
+      <div class="form-row">
+        <input class="input" id="postContent" placeholder="And content..." />
+        <button class="btn btn-blue" onclick="manualPost()">&#x1F4DD; SEND</button>
+      </div>
+      <div id="postResult" style="font-size:11px;color:#00b894;margin-top:6px"></div>
+    </div>
+
+    <div class="form-section">
+      <h3>&#x1F4AC; Quick Comment</h3>
+      <div class="form-row">
+        <input class="input" id="commentPostId" placeholder="Post ID" />
+        <input class="input" id="commentContent" placeholder="Comment (empty = AI generates)" />
+        <button class="btn btn-cyan" onclick="quickComment()">&#x1F4AC; SEND</button>
+      </div>
+      <div id="commentResult" style="font-size:11px;color:#00b894;margin-top:6px"></div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+      <div class="section-label" style="margin:0">Hackathon Trends</div>
+      <button class="btn btn-purple" onclick="loadTrends()" style="padding:4px 12px;font-size:11px">&#x1F4CA; FETCH TRENDS</button>
+      <button class="btn btn-blue" onclick="loadFeed()" style="padding:4px 12px;font-size:11px">&#x1F4E1; RAW FEED</button>
+    </div>
+    <div id="feed" class="cards">
+      <div class="loading">Click a button above to load data</div>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="log-header">
+      <h3>&#x1F4DF; System Logs</h3>
+      <button class="btn" onclick="clearLogs()" style="padding:3px 10px;font-size:10px">CLEAR</button>
+    </div>
+    <div class="log-body" id="logBox"></div>
+  </div>
+</div>
+
+<script>
+// Point this to your deployed FastAPI backend URL (Render/Fly/Railway/etc.)
+const API = 'https://your-backend-host';
+let sleepEnd = null;
+let nextPost = null;
+
+setInterval(()=>{
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-GB');
+}, 1000);
+
+async function checkStatus(){
+  try{
+    const r = await fetch(API+'/agent/status');
+    const d = await r.json();
+    const el = document.getElementById('status');
+    if(d.sleeping){
+      el.textContent='\u{1F634} SLEEPING'; el.className='badge b-sleep';
+      sleepEnd = Date.now() + d.sleep_remaining_s*1000;
+    } else if(d.running){
+      el.textContent='\u25CF RUNNING'; el.className='badge b-run';
+    } else {
+      el.textContent='\u25CB OFFLINE'; el.className='badge b-stop';
+    }
+    if(d.next_post_remaining_s > 0) nextPost = Date.now() + d.next_post_remaining_s*1000;
+    else nextPost = null;
+  }catch(e){}
+}
+
+setInterval(()=>{
+  const st = document.getElementById('sleepTimer');
+  if(sleepEnd && Date.now()<sleepEnd){
+    const s = Math.max(0, Math.floor((sleepEnd-Date.now())/1000));
+    st.textContent = String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+  } else { st.textContent='--:--'; sleepEnd=null; }
+  const pt = document.getElementById('postTimer');
+  if(nextPost && Date.now()<nextPost){
+    const s = Math.max(0, Math.floor((nextPost-Date.now())/1000));
+    pt.textContent = String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+  } else { pt.textContent='--:--'; nextPost=null; }
+}, 1000);
+
+async function pollLogs(){
+  try{
+    const r = await fetch(API+'/logs');
+    const d = await r.json();
+    const box = document.getElementById('logBox');
+    box.innerHTML = d.logs.map(l =>
+      '<div class="log-line"><span class="log-ts">'+l.ts+'</span> <span class="log-'+l.level+'">['+l.level.toUpperCase()+']</span> '+esc(l.msg)+'</div>'
+    ).join('');
+    box.scrollTop = box.scrollHeight;
+  }catch(e){}
+}
+
+function clearLogs(){ document.getElementById('logBox').innerHTML=''; }
+
+async function startAgent(){
+  await fetch(API+'/agent/start',{method:'POST'});
+  addLocalLog('ok','Start command sent'); checkStatus();
+}
+async function stopAgent(){
+  await fetch(API+'/agent/stop',{method:'POST'});
+  addLocalLog('warn','Stop command sent'); checkStatus();
+}
+async function sleepAgent(){
+  await fetch(API+'/agent/sleep?minutes=30',{method:'POST'});
+  sleepEnd = Date.now() + 30*60*1000;
+  addLocalLog('info','Sleep mode: 30 minutes'); checkStatus();
+}
+async function wakeAgent(){
+  await fetch(API+'/agent/wake',{method:'POST'});
+  sleepEnd = null;
+  addLocalLog('ok','Agent awakened'); checkStatus();
+}
+
+async function quickPost(){
+  const topic = document.getElementById('postTopic').value || 'hackathon tips';
+  document.getElementById('postResult').textContent = '\u23F3 AI generating...';
+  try{
+    const r = await fetch(API+'/post',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({topic:topic})});
+    const d = await r.json();
+    document.getElementById('postResult').textContent = '\u2705 ' + (d.title||'Posted');
+    nextPost = Date.now() + 30*60*1000;
+    addLocalLog('ok','Post created: '+(d.title||'').slice(0,40));
+  }catch(e){
+    document.getElementById('postResult').textContent = '\u274C '+e.message;
+    addLocalLog('error','Post failed: '+e.message);
+  }
+}
+async function manualPost(){
+  const title = document.getElementById('postTitle').value;
+  const content = document.getElementById('postContent').value;
+  if(!title||!content){ document.getElementById('postResult').textContent='\u274C Need title + content'; return; }
+  document.getElementById('postResult').textContent = '\u23F3 Posting...';
+  try{
+    const r = await fetch(API+'/post',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:title,content:content})});
+    const d = await r.json();
+    document.getElementById('postResult').textContent = '\u2705 Published!';
+    nextPost = Date.now() + 30*60*1000;
+    addLocalLog('ok','Manual post: '+title.slice(0,40));
+  }catch(e){
+    document.getElementById('postResult').textContent = '\u274C '+e.message;
+  }
+}
+
+async function quickComment(){
+  const post_id = document.getElementById('commentPostId').value.trim();
+  const content = document.getElementById('commentContent').value.trim();
+  if(!post_id){ document.getElementById('commentResult').textContent='\u274C Need Post ID'; return; }
+  document.getElementById('commentResult').textContent = '\u23F3 '+(content?'Sending...':'AI generating...');
+  try{
+    var body = {post_id:post_id};
+    if(content) body.content = content;
+    const r = await fetch(API+'/comment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d = await r.json();
+    document.getElementById('commentResult').textContent = '\u2705 Commented!';
+    addLocalLog('ok','Comment on '+post_id.slice(0,8));
+  }catch(e){
+    document.getElementById('commentResult').textContent = '\u274C '+e.message;
+    addLocalLog('error','Comment failed: '+e.message);
+  }
+}
+
+async function loadTrends(){
+  var el = document.getElementById('feed');
+  el.innerHTML = '<div class="loading"><span class="spinner"></span> Fetching & summarizing trends...</div>';
+  try{
+    const r = await fetch(API+'/summary?max_posts=10');
+    const d = await r.json();
+    if(!d.posts||!d.posts.length){ el.innerHTML='<div class="loading">No posts found</div>'; return; }
+    el.innerHTML = d.posts.map(function(p){return '<div class="card"><div class="topic">'+esc(p.topic||'general')+'</div><h3>'+esc(p.title||'Untitled')+'</h3><div class="summary">'+fmt(p.summary||'')+'</div><div class="actions"><button class="btn btn-cyan" onclick="prefillComment(\''+p.id+'\')" style="padding:3px 10px;font-size:10px">\u{1F4AC} Comment</button></div></div>';}).join('');
+    addLocalLog('ok','Trends loaded: '+d.posts.length+' posts');
+  }catch(e){
+    el.innerHTML='<div class="loading" style="color:#e94560">Error: '+esc(e.message)+'</div>';
+  }
+}
+
+async function loadFeed(){
+  var el = document.getElementById('feed');
+  el.innerHTML = '<div class="loading"><span class="spinner"></span> Fetching raw feed...</div>';
+  try{
+    const r = await fetch(API+'/feed?limit=10');
+    const d = await r.json();
+    if(!d.posts||!d.posts.length){ el.innerHTML='<div class="loading">Empty feed</div>'; return; }
+    el.innerHTML = d.posts.map(function(p){return '<div class="card"><h3>'+esc(p.title||'Untitled')+'</h3><div class="summary">'+esc((p.content||'').slice(0,200))+'</div><div class="actions"><button class="btn btn-cyan" onclick="prefillComment(\''+p.id+'\')" style="padding:3px 10px;font-size:10px">\u{1F4AC} Comment</button></div></div>';}).join('');
+    addLocalLog('ok','Raw feed loaded: '+d.posts.length+' posts');
+  }catch(e){
+    el.innerHTML='<div class="loading" style="color:#e94560">Error: '+esc(e.message)+'</div>';
+  }
+}
+
+function prefillComment(id){
+  document.getElementById('commentPostId').value = id;
+  document.getElementById('commentContent').focus();
+}
+
+function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function fmt(s){return s.replace(/\n/g,'<br>');}
+function addLocalLog(level,msg){
+  var ts = new Date().toLocaleTimeString('en-GB');
+  var box = document.getElementById('logBox');
+  box.innerHTML += '<div class="log-line"><span class="log-ts">'+ts+'</span> <span class="log-'+level+'">['+level.toUpperCase()+']</span> '+esc(msg)+'</div>';
+  box.scrollTop = box.scrollHeight;
+}
+
+async function loadConfig(){
+  try{
+    const r = await fetch(API+'/config');
+    const d = await r.json();
+    document.getElementById('cfgPosting').checked = d.posting_enabled;
+    document.getElementById('cfgCommenting').checked = d.commenting_enabled;
+    document.getElementById('cfgInterval').textContent = d.posting_interval_min+'m';
+    var tEl = document.getElementById('cfgTopics');
+    tEl.innerHTML = (d.topics||[]).map(function(t){return '<span class="tag">'+esc(t)+'</span>';}).join(' ');
+  }catch(e){}
+}
+
+async function toggleCfg(key, val){
+  var body = {};
+  body[key] = val;
+  await fetch(API+'/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  addLocalLog('ok', key+' = '+val);
+  loadConfig();
+}
+
+async function loadMetrics(){
+  try{
+    const r = await fetch(API+'/metrics');
+    const d = await r.json();
+    document.getElementById('metricRate').textContent = d.success_rate+'%';
+    document.getElementById('metricSolved').textContent = d.verifications_solved;
+    document.getElementById('metricFailed').textContent = d.verifications_failed;
+    var el = document.getElementById('metricRate');
+    el.className = 'stat-big '+(d.success_rate >= 70 ? 'green' : d.success_rate >= 40 ? 'purple' : 'red');
+  }catch(e){}
+}
+
+async function loadMemory(){
+  try{
+    const r = await fetch(API+'/memory');
+    const d = await r.json();
+    document.getElementById('memCommented').textContent = d.posts_commented;
+    document.getElementById('memSeen').textContent = d.seen_feed_items;
+  }catch(e){}
+}
+
+async function loadPersonality(){
+  try{
+    const r = await fetch(API+'/personality');
+    const d = await r.json();
+    document.getElementById('perName').textContent = d.agent_name;
+    document.getElementById('perRole').textContent = d.personality;
+    document.getElementById('perStyle').textContent = d.reply_style;
+    document.getElementById('perLLM').textContent = d.llm;
+  }catch(e){}
+}
+
+const _origFetch = window.fetch;
+window.fetch = async function(...args){
+  const r = await _origFetch(...args);
+  if(r.status === 401){ window.location.href='/login'; }
+  return r;
+};
+async function doLogout(){
+  await fetch(API+'/auth/logout',{method:'POST'});
+  window.location.href='/login';
+}
+
+checkStatus();
+loadConfig();
+loadMetrics();
+loadMemory();
+loadPersonality();
+setInterval(checkStatus, 5000);
+setInterval(pollLogs, 3000);
+setInterval(function(){ loadMetrics(); loadMemory(); }, 10000);
+addLocalLog('info','Dashboard initialized');
+</script>
+</body>
+</html>
